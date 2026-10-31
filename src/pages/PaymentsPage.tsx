@@ -4,9 +4,10 @@ import { deletePayment, savePayment } from '../lib/api'
 import { derivePaymentStatus, formatTRY, monthLabel } from '../lib/calculations'
 import type { Payment, TeacherMonthSummary } from '../types'
 import { MonthPicker } from '../components/MonthPicker'
+import { dateInIstanbul, normalizeSavedPaymentDate } from '../lib/dates'
 import { StatusBadge } from '../components/StatusBadge'
 
-const today = () => new Date().toISOString().slice(0, 10)
+const today = () => dateInIstanbul()
 const empty = { id: '', teacherId: '', amount: '', paidAt: today(), note: '' }
 
 export function PaymentsPage({ month, setMonth, summaries, payments, reload }: { month: string; setMonth: (v: string) => void; summaries: TeacherMonthSummary[]; payments: Payment[]; reload: () => Promise<void> }) {
@@ -20,7 +21,7 @@ export function PaymentsPage({ month, setMonth, summaries, payments, reload }: {
     if (overpay && !confirm('Bu ödeme kalan hakedişi aşıyor. Yine de kaydedilsin mi?')) return
     try { await savePayment({ id: form.id || undefined, teacher_id: form.teacherId, payment_month: month, amount: Number(form.amount), paid_at: form.paidAt, note: form.note || null }); setForm(empty); setMessage('Ödeme kaydedildi.'); await reload() } catch (e) { setMessage(e instanceof Error ? e.message : 'Ödeme kaydedilemedi.') }
   }
-  function edit(payment: Payment) { setForm({ id: payment.id, teacherId: payment.teacher_id, amount: String(payment.amount), paidAt: payment.paid_at, note: payment.note ?? '' }); window.scrollTo({ top: 0, behavior: 'smooth' }) }
+  function edit(payment: Payment) { setForm({ id: payment.id, teacherId: payment.teacher_id, amount: String(payment.amount), paidAt: normalizeSavedPaymentDate(payment.paid_at), note: payment.note ?? '' }); window.scrollTo({ top: 0, behavior: 'smooth' }) }
   async function remove(id: string) { if (!confirm('Bu ödeme kaydı iptal edilsin mi?')) return; await deletePayment(id); await reload() }
   function exportCsv() {
     const lines = [['Öğretmen','Ay','Hakediş','Ödenen','Kalan','Durum'], ...rows.map((x) => [x.teacher.name, month, x.entitlement, x.paid, x.remaining, derivePaymentStatus(x.entitlement, x.paid, x.requiresReview)])]
