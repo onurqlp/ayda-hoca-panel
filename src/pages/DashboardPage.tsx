@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { ArrowRight, Banknote, BookOpen, CheckCircle2, Clock3, Search, Users } from 'lucide-react'
+import { ArrowRight, Banknote, BookOpen, CheckCircle2, Clock3, Pencil, Search, Users } from 'lucide-react'
 import { derivePaymentStatus, formatTRY, monthLabel } from '../lib/calculations'
 import type { Teacher, TeacherMonthSummary } from '../types'
 import { MonthPicker } from '../components/MonthPicker'
@@ -8,13 +8,14 @@ import { Modal } from '../components/Modal'
 
 type View = 'all' | 'unpaid' | 'partial' | 'paid' | 'review'
 
-export function DashboardPage({ month, setMonth, summaries, teachers, loading, goTo }: {
+export function DashboardPage({ month, setMonth, summaries, teachers, loading, goTo, onEditEntry }: {
   month: string
   setMonth: (value: string) => void
   summaries: TeacherMonthSummary[]
   teachers: Teacher[]
   loading: boolean
   goTo: (page: 'entries' | 'payments' | 'teachers') => void
+  onEditEntry: (entryId: string) => void
 }) {
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState<View>('all')
@@ -74,7 +75,8 @@ export function DashboardPage({ month, setMonth, summaries, teachers, loading, g
         </>}
     </section>
     {selected && <Modal title={selected.teacher.name + ' · ' + monthLabel(month)} onClose={() => setSelectedId(null)}>
-      <div className="space-y-2">{selected.entries.map(entry => <div className="flex justify-between gap-4 rounded-xl bg-slate-50 p-3 text-sm" key={entry.id}><div><b>{entry.entry_type === 'group' ? 'Grup dersi' : entry.entry_type === 'private' ? 'Özel ders' : 'Ek iş'}</b><p className="text-slate-500">{entry.quantity} × {formatTRY(entry.unit_rate_snapshot)}{entry.description ? ' · ' + entry.description : ''}</p></div><strong>{formatTRY(entry.total_amount)}</strong></div>)}</div>
+      <p className="mb-3 text-xs text-slate-500">Ders bilgilerini ödeme durumundan bağımsız olarak değiştirebilirsiniz.</p>
+      <div className="space-y-2">{selected.entries.map(entry => <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-slate-50 p-3 text-sm" key={entry.id}><div className="min-w-0 flex-1"><b>{entry.entry_type === 'group' ? 'Grup dersi' : entry.entry_type === 'private' ? 'Özel ders' : 'Ek iş'}</b><p className="text-slate-500">{entry.quantity} × {formatTRY(entry.unit_rate_snapshot)}{entry.description ? ' · ' + entry.description : ''}</p></div><div className="flex items-center gap-2"><strong>{formatTRY(entry.total_amount)}</strong><button type="button" className="btn-secondary px-3 py-2" onClick={() => { setSelectedId(null); onEditEntry(entry.id) }}><Pencil size={15} /> Düzenle</button></div></div>)}</div>
       <div className="mt-4 space-y-2 border-t pt-4 text-sm"><div className="flex justify-between"><span>Hakediş</span><b>{formatTRY(selected.entitlement)}</b></div><div className="flex justify-between text-emerald-700"><span>Ödenen</span><b>{formatTRY(selected.paid)}</b></div><div className="flex justify-between font-bold text-amber-700"><span>Kalan</span><span>{formatTRY(selected.remaining)}</span></div></div>
       <button className="btn-primary mt-5 w-full" onClick={() => { setSelectedId(null); goTo('payments') }}>Ödemelere git</button>
     </Modal>}
