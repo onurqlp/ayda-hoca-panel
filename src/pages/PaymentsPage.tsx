@@ -1,33 +1,33 @@
 import { useEffect, useMemo, useState } from 'react'
 import { CheckCircle2, Download, Pencil, Plus, Trash2 } from 'lucide-react'
 import { deletePayment, listMonthPayments, savePayment } from '../lib/api'
-import { outstandingAmount, quickPaymentDateError } from '../lib/quickPayment'
+import { outstandingAmount, effectivePaymentDate } from '../lib/quickPayment'
 import { derivePaymentStatus, formatTRY, monthLabel } from '../lib/calculations'
 import type { Payment, TeacherMonthSummary } from '../types'
 import { MonthPicker } from '../components/MonthPicker'
-import { currentMonth, dateInIstanbul, normalizeSavedPaymentDate, workMonthForPaymentMonth } from '../lib/dates'
+import { dateInIstanbul, normalizeSavedPaymentDate, workMonthForPaymentMonth } from '../lib/dates'
 import { StatusBadge } from '../components/StatusBadge'
 import { Modal } from '../components/Modal'
 
 const today = () => dateInIstanbul()
-const emptyForMonth = (month: string) => ({
+const emptyForMonth = () => ({
   id: '', teacherId: '', amount: '',
-  paidAt: currentMonth() === month ? today() : '', note: '',
+  paidAt: today(), note: '',
 })
 
 export function PaymentsPage({ month, setMonth, summaries, payments, reload }: { month: string; setMonth: (v: string) => void; summaries: TeacherMonthSummary[]; payments: Payment[]; reload: () => Promise<void> }) {
-  const [form, setForm] = useState(() => emptyForMonth(month))
+  const [form, setForm] = useState(() => emptyForMonth())
   const workMonth = workMonthForPaymentMonth(month)
   const [message, setMessage] = useState('')
   const [quickTeacherId, setQuickTeacherId] = useState<string | null>(null)
-  const [quickPaidAt, setQuickPaidAt] = useState(() => emptyForMonth(month).paidAt)
+  const [quickPaidAt, setQuickPaidAt] = useState(() => emptyForMonth().paidAt)
   const [quickNote, setQuickNote] = useState('')
   const [quickError, setQuickError] = useState('')
   const [quickBusy, setQuickBusy] = useState(false)
   const [saving, setSaving] = useState(false)
   // Ay değişince eski ödeme kaydının yanlış döneme taşınmasını önle.
   useEffect(() => {
-    setForm(emptyForMonth(month))
+    setForm(emptyForMonth())
     setQuickTeacherId(null)
     setMessage('')
     setQuickError('')
@@ -40,7 +40,7 @@ export function PaymentsPage({ month, setMonth, summaries, payments, reload }: {
 
   function openQuickPayment(item: TeacherMonthSummary) {
     setQuickError('')
-    setQuickPaidAt(emptyForMonth(month).paidAt)
+    setQuickPaidAt(emptyForMonth().paidAt)
     setQuickNote('')
     setQuickTeacherId(item.teacher.id)
   }
@@ -48,8 +48,6 @@ export function PaymentsPage({ month, setMonth, summaries, payments, reload }: {
   async function confirmQuickPayment(event: React.FormEvent) {
     event.preventDefault()
     if (!quickTeacher || quickBusy) return
-    const dateError = quickPaymentDateError(quickPaidAt, month, today())
-    if (dateError) return setQuickError(dateError)
     if (quickTeacher.requiresReview) return setQuickError('Önce kontrol bekleyen ders kayıtlarını inceleyin.')
     if (quickAmount <= 0) return setQuickError('Bu hocanın kalan ödemesi bulunmuyor.')
     setQuickBusy(true)
@@ -76,7 +74,7 @@ export function PaymentsPage({ month, setMonth, summaries, payments, reload }: {
         teacher_id: quickTeacher.teacher.id,
         payment_month: month,
         amount: latestBalance,
-        paid_at: quickPaidAt,
+        paid_at: effectivePaymentDate(quickPaidAt, today()),
         note: quickNote.trim() || 'Kalan hakediş ödendi',
       })
       saved = true
@@ -99,15 +97,13 @@ export function PaymentsPage({ month, setMonth, summaries, payments, reload }: {
   }
   async function submit(event: React.FormEvent) {
     event.preventDefault(); if (saving) return; setMessage('')
-    if (!form.paidAt || form.paidAt > today()) return setMessage('Ödeme gerçekleştikten sonra gerçek tarihi seçin.')
-    if (form.paidAt.slice(0, 7) !== month) return setMessage('Ödeme tarihi seçili ödeme ayına ait olmalı.')
     if (overpay && !confirm('Bu ödeme kalan hakedişi aşıyor. Yine de kaydedilsin mi?')) return
     setSaving(true)
     let saved = false
     try {
-      const payment = await savePayment({ id: form.id || undefined, teacher_id: form.teacherId, payment_month: month, amount: Number(form.amount), paid_at: form.paidAt, note: form.note || null })
+      const payment = await savePayment({ id: form.id || undefined, teacher_id: form.teacherId, payment_month: month, amount: Number(form.amount), paid_at: effectivePaymentDate(form.paidAt, today()), note: form.note || null })
       saved = true
-      setForm(emptyForMonth(month))
+      setForm(emptyForMonth())
       await reload()
       const verified = await listMonthPayments(month)
       setMessage(verified.some(item => item.id === payment.id) ? 'Ödeme Google Sheets\'ten doğrulandı.' : 'Ödeme kaydı gönderildi; yeniden okuma doğrulanamadı. Yenileyerek kontrol edin.')
@@ -123,7 +119,7 @@ export function PaymentsPage({ month, setMonth, summaries, payments, reload }: {
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); const link = document.createElement('a'); link.href = url; link.download = `ayda-odemeler-${month}.csv`; link.click(); URL.revokeObjectURL(url)
   }
   return <><div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-center"><div><h1 className="text-2xl font-bold">{monthLabel(month)} Ödemeleri</h1><p className="mt-1 text-sm text-slate-500">{monthLabel(workMonth)} derslerinin ödemesi bu dönemde yapılır. Gerçek ödeme yapılana kadar borç açık kalır.</p></div><div className="flex gap-2"><button className="btn-secondary" onClick={exportCsv}><Download size={17} /> CSV</button><label className="text-xs font-semibold text-slate-600">Ödeme ayı<MonthPicker value={month} onChange={setMonth} /></label></div></div>
-    <form className="card mb-6 p-5" onSubmit={submit}><div className="grid gap-4 md:grid-cols-4"><label><span className="label">Öğretmen</span><select className="field" required value={form.teacherId} onChange={(e) => setForm({ ...form, teacherId: e.target.value })}><option value="">Seçin</option>{rows.map((x) => <option key={x.teacher.id} value={x.teacher.id}>{x.teacher.name}</option>)}</select></label><label><span className="label">Tutar</span><input className="field" type="number" min="0.01" step="0.01" required value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} /></label><label><span className="label">Ödeme tarihi</span><input className="field" type="date" required max={today()} value={form.paidAt} onChange={(e) => setForm({ ...form, paidAt: e.target.value })} /></label><label><span className="label">Not</span><input className="field" value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} /></label></div>{selected && <p className={`mt-3 text-sm font-medium ${overpay ? 'text-red-700' : 'text-slate-600'}`}>Kalan: {formatTRY(selected.remaining)} {overpay ? '· Girilen tutar kalanı aşıyor.' : ''}</p>}<div className="mt-4 flex items-center gap-2">{form.id && <button type="button" className="btn-secondary" onClick={() => setForm(emptyForMonth(month))}>Vazgeç</button>}<button className="btn-primary" disabled={saving}><Plus size={17} /> {saving ? 'Kaydediliyor...' : form.id ? 'Ödemeyi Güncelle' : 'Ödeme Ekle'}</button></div>{message && <p role="status" className="mt-3 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800">{message}</p>}</form>
+    <form className="card mb-6 p-5" onSubmit={submit}><div className="grid gap-4 md:grid-cols-4"><label><span className="label">Öğretmen</span><select className="field" required value={form.teacherId} onChange={(e) => setForm({ ...form, teacherId: e.target.value })}><option value="">Seçin</option>{rows.map((x) => <option key={x.teacher.id} value={x.teacher.id}>{x.teacher.name}</option>)}</select></label><label><span className="label">Tutar</span><input className="field" type="number" min="0.01" step="0.01" required value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} /></label><label><span className="label">Ödeme tarihi (isteğe bağlı)</span><input className="field" type="date" value={form.paidAt} onChange={(e) => setForm({ ...form, paidAt: e.target.value })} /></label><label><span className="label">Not</span><input className="field" value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} /></label></div>{selected && <p className={`mt-3 text-sm font-medium ${overpay ? 'text-red-700' : 'text-slate-600'}`}>Kalan: {formatTRY(selected.remaining)} {overpay ? '· Girilen tutar kalanı aşıyor.' : ''}</p>}<div className="mt-4 flex items-center gap-2">{form.id && <button type="button" className="btn-secondary" onClick={() => setForm(emptyForMonth())}>Vazgeç</button>}<button className="btn-primary" disabled={saving}><Plus size={17} /> {saving ? 'Kaydediliyor...' : form.id ? 'Ödemeyi Güncelle' : 'Ödeme Ekle'}</button></div>{message && <p role="status" className="mt-3 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800">{message}</p>}</form>
     <div className="space-y-4">{rows.length === 0 && <div className="card p-8 text-center text-sm text-slate-500">{monthLabel(workMonth)} için hakediş veya ödeme kaydı yok.</div>}{rows.map((item) => <article className="card p-5" key={item.teacher.id}><div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center"><div><p className="font-bold">{item.teacher.name}</p><p className="mt-1 text-sm text-slate-500">{monthLabel(workMonth)} dersleri · {monthLabel(month)} ödemesi</p></div><div className="flex flex-wrap items-center gap-2">
       <StatusBadge status={derivePaymentStatus(item.entitlement, item.paid, item.requiresReview)} />
       {outstandingAmount(item.entitlement, item.paid) > 0 && !item.requiresReview
@@ -136,9 +132,9 @@ export function PaymentsPage({ month, setMonth, summaries, payments, reload }: {
     </div></div><div className="mt-4 grid grid-cols-3 gap-3 border-y border-slate-100 py-4 text-sm"><div><p className="text-xs text-slate-500">Hakediş</p><p className="font-bold">{formatTRY(item.entitlement)}</p></div><div><p className="text-xs text-slate-500">Ödenen</p><p className="font-bold text-emerald-700">{formatTRY(item.paid)}</p></div><div><p className="text-xs text-slate-500">Kalan</p><p className="font-bold text-red-700">{formatTRY(item.remaining)}</p></div></div><div className="mt-3 space-y-2">{item.payments.map((payment) => <div className="flex items-center justify-between rounded-xl bg-slate-50 p-3 text-sm" key={payment.id}><div><span className="font-semibold">{formatTRY(payment.amount)}</span><span className="ml-2 text-slate-500">{payment.paid_at}{payment.note ? ` · ${payment.note}` : ''}</span></div><div className="flex"><button className="p-2 text-slate-500" onClick={() => edit(payment)}><Pencil size={16} /></button><button className="p-2 text-red-600" onClick={() => void remove(payment.id)}><Trash2 size={16} /></button></div></div>)}</div></article>)}</div>
     {quickTeacher && <Modal title={quickTeacher.teacher.name + ' · Ödendi Olarak İşaretle'} onClose={() => { if (!quickBusy) setQuickTeacherId(null) }}>
       <form className="space-y-4" onSubmit={(event) => { void confirmQuickPayment(event) }}>
-        <p className="text-sm text-slate-600">Gerçekten ödeme yaptıysan onayla. Bu işlem yeni bir ödeme kaydı oluşturur; ders kayıtlarını değiştirmez.</p>
+        <p className="text-sm text-slate-600">Onayladığında kalan tutar ödendi olarak kaydedilir. Tarih ödeme ayından farklı olabilir; tarih boş bırakılırsa bugün kullanılır.</p>
         <div className="rounded-xl bg-emerald-50 p-4"><p className="text-xs font-semibold text-emerald-700">Ödendi kaydedilecek kalan tutar</p><p className="mt-1 text-2xl font-bold text-emerald-950">{formatTRY(quickAmount)}</p><p className="mt-1 text-xs text-emerald-700">{monthLabel(workMonth)} dersleri · {monthLabel(month)} ödemesi</p></div>
-        <label className="block"><span className="label">Ödemenin gerçek tarihi *</span><input className="field" type="date" required max={today()} value={quickPaidAt} onChange={e => setQuickPaidAt(e.target.value)} /></label>
+        <label className="block"><span className="label">Ödeme tarihi (isteğe bağlı, boşsa bugün)</span><input className="field" type="date" value={quickPaidAt} onChange={e => setQuickPaidAt(e.target.value)} /></label>
         <label className="block"><span className="label">Not (isteğe bağlı)</span><input className="field" placeholder="Banka havalesi, nakit vb." value={quickNote} onChange={e => setQuickNote(e.target.value)} /></label>
         {quickError && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{quickError}</p>}
         <div className="flex flex-wrap justify-end gap-2"><button type="button" className="btn-secondary" disabled={quickBusy} onClick={() => setQuickTeacherId(null)}>Vazgeç</button><button type="submit" className="btn-primary" disabled={quickBusy || quickAmount <= 0}><CheckCircle2 size={17} /> {quickBusy ? 'Kaydediliyor...' : 'Ödemeyi Onayla'}</button></div>

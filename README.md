@@ -25,11 +25,11 @@ arayüz güncellemeleri için tekrar HTML kopyalamak gerekmez.
 - Grup veya özel ders saati girişi, otomatik hesaplanan aylık hakediş
 - **Bir ay sonra ödeme:** Ekim dersleri Kasım ödemesine, Kasım dersleri Aralık ödemesine bağlanır.
 - Ödeme ekleme, kısmi ödeme, ödenen ve kalan tutarlar
-- Ödemeler sayfasında hoca bazında **Ödendi İşaretle**: gerçek ödeme tarihi ve onayla kalan tutarın tamamı için işlem oluşturma; kısmi ödemede yalnızca kalan kapatılır.
+- Ödemeler sayfasında hoca bazında **Ödendi İşaretle**: kalan tutarın tamamı için işlem oluşturma; kısmi ödemede yalnızca kalan kapatılır. Tarih alanı isteğe bağlıdır ve ödeme ayıyla eşleşmek zorunda değildir.
 - Öğretmen bazında aylık özet ve toplamlar
 - Panel ve Ödemeler sayfasındaki ay seçimi **ödeme ayıdır**; Ders Girişi'nde **ders ayı** seçilir.
 - Sayısal/tarihe dönüşmüş ay değerleri panel tarafından alternatif biçimleriyle okunur.
-- Gerçek transfer tarihini girmeden hiçbir ödeme ödenmiş sayılmaz.
+- Ödendi kaydı yalnızca kullanıcı onay verdiğinde oluşur. Tarih belirtilmezse bugünün tarihi kullanılır; ödeme tarihi ile ödeme dönemi bağımsızdır.
 - Geçmiş ayı seçme, kayıt düzenleme, CSV dışa aktarma
 
 ## Önemli
