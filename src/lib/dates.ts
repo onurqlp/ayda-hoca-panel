@@ -17,9 +17,13 @@ export function currentMonth(date: Date = new Date()): string {
 }
 
 // Ekim derslerinin ödemesi Kasım dönemine aittir.
+export function isValidMonth(month: string): boolean {
+  return /^\d{4}-(0[1-9]|1[0-2])$/.test(month)
+}
+
 export function shiftMonth(month: string, delta: number): string {
   const [year, monthNumber] = month.split('-').map(Number)
-  if (!Number.isInteger(year) || !Number.isInteger(monthNumber) || monthNumber < 1 || monthNumber > 12)
+  if (!isValidMonth(month) || !Number.isInteger(year) || !Number.isInteger(monthNumber))
     throw new Error('Geçersiz ay: ' + month)
   return new Date(Date.UTC(year, monthNumber - 1 + delta, 1)).toISOString().slice(0, 7)
 }

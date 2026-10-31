@@ -13,9 +13,11 @@ export function derivePaymentStatus(
   paid: number,
   requiresReview = false,
 ): PaymentStatus {
-  if (requiresReview) return 'review'
   const due = toCents(entitlement)
   const settled = toCents(paid)
+  // The amount is paid when fully settled, even if imported lessons still need review.
+  if (settled > 0 && settled >= due) return 'paid'
+  if (requiresReview) return 'review'
   if (settled <= 0) return 'unpaid'
   if (settled < due) return 'partial'
   return 'paid'

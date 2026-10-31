@@ -15,6 +15,11 @@ describe('derivePaymentStatus', () => {
     expect(derivePaymentStatus(1000, 1000)).toBe('paid')
   })
 
+  it('reports fully paid balance even when the imported lesson has a review flag', () => {
+    expect(derivePaymentStatus(1000, 1000, true)).toBe('paid')
+    expect(derivePaymentStatus(1000, 400, true)).toBe('review')
+  })
+
   it('belirsiz içe aktarma durumunu korur', () => {
     expect(derivePaymentStatus(1000, 0, true)).toBe('review')
   })

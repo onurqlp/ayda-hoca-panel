@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { currentMonth, dateInIstanbul, defaultPaymentMonth, normalizeSavedPaymentDate, paymentMonthForWorkMonth, workMonthForPaymentMonth } from './dates'
+import { currentMonth, dateInIstanbul, defaultPaymentMonth, isValidMonth, normalizeSavedPaymentDate, paymentMonthForWorkMonth, workMonthForPaymentMonth } from './dates'
 
 describe('Istanbul month and payment dates', () => {
+  it('does not accept cleared or malformed month values', () => {
+    expect(isValidMonth('2026-10')).toBe(true)
+    expect(isValidMonth('')).toBe(false)
+    expect(isValidMonth('2026-13')).toBe(false)
+    expect(isValidMonth('2026-1')).toBe(false)
+    expect(() => workMonthForPaymentMonth('')).toThrow('Geçersiz ay')
+  })
+
   it('uses local month at Istanbul midnight instead of UTC month', () => {
     expect(currentMonth(new Date('2026-10-31T21:30:00Z'))).toBe('2026-11')
     expect(currentMonth(new Date('2026-10-31T20:30:00Z'))).toBe('2026-10')
