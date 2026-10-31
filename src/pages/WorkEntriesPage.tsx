@@ -53,7 +53,18 @@ export function WorkEntriesPage({ month, setMonth, teachers, entries, reload, ed
     if (!form.rate || Number(form.rate) < 0) return setMessage('Birim ücret belirlenmeden kayıt yapılamaz.')
     setBusy(true)
     try {
-      await saveWorkEntry({ id: form.id || undefined, teacher_id: form.teacherId, work_month: month, entry_type: form.type, quantity: Number(form.quantity), unit_rate_snapshot: Number(form.rate), total_amount: amount, description: form.description || null, source_type: 'manual', requires_review: false })
+      // Excel'den gelen kayıt düzenlenirken kaynak referansı korunur.
+      // Böylece aynı Excel tekrar aktarılırsa ikinci bir hakediş oluşmaz.
+      const existing = form.id ? entries.find((item) => item.id === form.id) : undefined
+      await saveWorkEntry({
+        id: form.id || undefined, teacher_id: form.teacherId, work_month: month,
+        entry_type: form.type, quantity: Number(form.quantity),
+        unit_rate_snapshot: Number(form.rate), total_amount: amount,
+        description: form.description || null,
+        source_type: existing?.source_type ?? 'manual',
+        source_reference: existing?.source_reference ?? null,
+        requires_review: existing?.requires_review ?? false,
+      })
       setForm({ ...empty, teacherId: form.teacherId }); setMessage(form.id ? 'Ders bilgileri güncellendi. Hakediş yeniden hesaplandı.' : 'Ders kaydı kaydedildi.'); await reload()
     } catch (e) { setMessage(e instanceof Error ? e.message : 'Kayıt başarısız.') } finally { setBusy(false) }
   }
