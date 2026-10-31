@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { FileSpreadsheet, Upload } from 'lucide-react'
-import { parseExcel, type ExcelPreview } from '../lib/importExcel'
+import { importSourceReferences, parseExcel, type ExcelPreview } from '../lib/importExcel'
 import { isLikelyDuplicateName, normalizeName } from '../lib/validation'
 import { saveTeacher, saveWorkEntry, sourceReferencesExist } from '../lib/api'
 import type { Teacher } from '../types'
@@ -23,7 +23,7 @@ export function ExcelImporter({ teachers, onDone }: { teachers: Teacher[]; onDon
     if (!preview) return
     setBusy(true); setMessage('')
     try {
-      const existingRefs = await sourceReferencesExist(preview.entries.map((x) => x.sourceReference))
+      const existingRefs = await sourceReferencesExist(preview.entries.flatMap(importSourceReferences))
       const canonical = (value: string) => normalizeName(value).replace(/hoca$/, '')
       const teacherMap = new Map(teachers.map((teacher) => [canonical(teacher.name), teacher]))
       let createdTeachers = 0; let createdEntries = 0
@@ -48,7 +48,7 @@ export function ExcelImporter({ teachers, onDone }: { teachers: Teacher[]; onDon
             notes: 'Aylık Excel içinde bulundu; ana öğretmen listesinde yok. Bilgileri doğrulayın.' })
           teacherMap.set(canonical(row.teacherName), teacher); createdTeachers++
         }
-        if (existingRefs.has(row.sourceReference)) continue
+        if (importSourceReferences(row).some((ref) => existingRefs.has(ref))) continue
         await saveWorkEntry({ teacher_id: teacher.id, work_month: row.workMonth, entry_type: row.entryType, description: row.description || null, quantity: row.quantity, unit_rate_snapshot: row.unitRate, total_amount: row.totalAmount, source_type: 'excel', source_reference: row.sourceReference, requires_review: row.requiresReview, rate_override_reason: null })
         createdEntries++
       }
