@@ -1,4 +1,5 @@
 import { calculateAmount } from './calculations'
+import * as XLSX from 'xlsx'
 
 export interface ImportEntry {
   teacherName: string
@@ -97,7 +98,6 @@ export function normalizeSheetRows(
 }
 
 export async function parseExcel(file: File, year: number): Promise<ExcelPreview> {
-  const XLSX = await import('xlsx')
   const buffer = await file.arrayBuffer()
   const hash = await crypto.subtle.digest('SHA-256', buffer)
   const fingerprint = Array.from(new Uint8Array(hash)).map((byte) => byte.toString(16).padStart(2, '0')).join('')

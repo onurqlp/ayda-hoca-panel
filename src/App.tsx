@@ -1,10 +1,8 @@
-import { useEffect, useState } from 'react'
-import type { Session } from '@supabase/supabase-js'
+import { useState } from 'react'
 import { Layout, type PageName } from './components/Layout'
-import { LoginScreen } from './components/LoginScreen'
 import { SetupScreen } from './components/SetupScreen'
 import { currentMonth } from './components/MonthPicker'
-import { isSupabaseConfigured, requireSupabase } from './lib/supabase'
+import { isAppsScriptHost } from './lib/appsScript'
 import { usePanelData } from './hooks/usePanelData'
 import { DashboardPage } from './pages/DashboardPage'
 import { WorkEntriesPage } from './pages/WorkEntriesPage'
@@ -19,16 +17,6 @@ function AuthenticatedApp() {
 }
 
 export default function App() {
-  const [session, setSession] = useState<Session | null | undefined>(undefined)
-  useEffect(() => {
-    if (!isSupabaseConfigured) { setSession(null); return }
-    const client = requireSupabase()
-    void client.auth.getSession().then(({ data }) => setSession(data.session))
-    const { data } = client.auth.onAuthStateChange((_event, nextSession) => setSession(nextSession))
-    return () => data.subscription.unsubscribe()
-  }, [])
-  if (!isSupabaseConfigured) return <SetupScreen />
-  if (session === undefined) return <div className="grid min-h-screen place-items-center text-slate-500">Oturum kontrol ediliyor…</div>
-  if (!session) return <LoginScreen />
+  if (!isAppsScriptHost()) return <SetupScreen />
   return <AuthenticatedApp />
 }

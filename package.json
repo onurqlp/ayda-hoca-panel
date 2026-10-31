@@ -6,10 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:apps-script": "npm run build && node scripts/package-apps-script.mjs",
     "test": "vitest run"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.76.1",
     "lucide-react": "^0.548.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",

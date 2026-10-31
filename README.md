@@ -1,27 +1,25 @@
 # AYDA | Hoca Paneli
 
-AYDA yöneticileri için öğretmen, aylık ders hakedişi ve ödeme yönetim paneli. React/Vite arayüzü Supabase Auth ve RLS korumalı Postgres tablolarına bağlanır.
+AYDA yöneticileri için öğretmen, aylık ders hakedişi ve ödeme yönetim paneli. React/Vite arayüzü Google Apps Script içinde çalışır; kayıtlar özel Google Sheet'te tutulur.
 
 ## Kurulum
 
-1. Supabase'te yeni bir proje oluşturun.
-2. SQL Editor'da [`supabase/migrations/001_initial.sql`](supabase/migrations/001_initial.sql) dosyasını çalıştırın.
-3. Authentication > Users bölümünden yönetici kullanıcılarını davet edin/oluşturun. Uygulamada herkese açık kayıt ekranı yoktur; Supabase'te **Allow new users to sign up** ayarını kapatın.
-4. Oluşturduğunuz kullanıcının UUID'sini SQL Editor'da izin listesine ekleyin: `insert into public.app_users (user_id) values ('KULLANICI_UUID');`
-5. `.env.example` dosyasını `.env.local` olarak kopyalayıp proje URL'sini ve **publishable/anon** anahtarını girin. `service_role` anahtarını asla tarayıcıya veya GitHub'a koymayın.
-6. `npm install && npm run dev` ile yerelde çalıştırın.
+Hazır veri dosyası: [AYDA Hoca Paneli Verileri](https://docs.google.com/spreadsheets/d/1pgSX6ffuXmBn9mmMjXEcPa1n_O3Vt6XWOJrm99QDRKI/edit)
 
-## Vercel
+1. `npm install && npm run build:apps-script` çalıştırın.
+2. Google Sheet'i açıp **Uzantılar → Apps Script** seçin.
+3. Editördeki `Code.gs` içeriğini [`apps-script/Code.gs`](apps-script/Code.gs) ile değiştirin.
+4. Yeni bir HTML dosyasını `Index` adıyla ekleyip [`apps-script/Index.html`](apps-script/Index.html) içeriğini yapıştırın.
+5. Fonksiyon listesinden `setup` seçip **Çalıştır** deyin ve Google izinlerini onaylayın.
+6. **Dağıt → Yeni dağıtım → Web uygulaması** seçin. Yürütme türünü **Web uygulamasına erişen kullanıcı**, erişimi **Google hesabı olan herkes** yapın.
+7. Dağıtım sonunda verilen `/exec` bağlantısı panel adresidir.
 
-- Repoyu Vercel'e bağlayın; framework Vite olarak otomatik algılanır.
-- `VITE_SUPABASE_URL` ve `VITE_SUPABASE_ANON_KEY` değişkenlerini Production, Preview ve Development ortamlarına ekleyin.
-- Build: `npm run build`, output: `dist`.
-- Supabase Authentication > URL Configuration bölümüne Vercel alan adını ekleyin.
+Başka kullanıcı eklemek için Google Sheet'i o kişiyle paylaşın ve `Ayarlar` sekmesindeki `ALLOWED_EMAILS` değerine e-posta adreslerini virgülle ayırarak yazın. Alan boşsa yalnızca dosya sahibi kabul edilir.
 
 ## Excel aktarımı
 
-Hocalar > Excel'den Aktar bölümünde dosya yılı zorunlu olarak seçilir. Dosya GitHub'a gönderilmez; tarayıcıda ön izlenir. Kaynak dosya parmak izi + sekme + satır ile mükerrer aktarım engellenir. `1`/boş ödeme işaretleri ve hesap farkları “Kontrol gerekli” olarak korunur.
+Hocalar → Excel'den Aktar bölümünde dosya yılı zorunlu olarak seçilir. Dosya GitHub'a gönderilmez; tarayıcıda ön izlenir. Kaynak dosya parmak izi + sekme + satır ile mükerrer aktarım engellenir. `1`/boş ödeme işaretleri ve hesap farkları “Kontrol gerekli” olarak korunur.
 
 ## Veri ve güvenlik notu
 
-Tüm uygulama tablolarında RLS açıktır; yalnızca Supabase'te oturum açmış ve `app_users` izin listesinde aktif olan kullanıcılar okuyup yazabilir. İlk sürümde tüm yetkili kullanıcılar aynı kurum verisini görür.
+Apps Script Google hesabını ve `ALLOWED_EMAILS` listesini denetler. Silinen ders/ödemeler fiziksel olarak yok edilmez; `cancelled` durumuna alınır ve her değişiklik `Denetim` sekmesine yazılır.

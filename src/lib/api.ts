@@ -1,30 +1,18 @@
-import { requireSupabase } from './supabase'
+import { callAppsScript } from './appsScript'
 import type { Payment, Teacher, WorkEntry } from '../types'
 
-const db = () => requireSupabase()
+const requestId = () => crypto.randomUUID()
 
 export async function listTeachers(includeInactive = true): Promise<Teacher[]> {
-  let query = db().from('teachers').select('*').order('name')
-  if (!includeInactive) query = query.eq('active', true)
-  const { data, error } = await query
-  if (error) throw error
-  return (data ?? []) as Teacher[]
+  return callAppsScript<Teacher[]>('listTeachers', { includeInactive })
 }
 
 export async function saveTeacher(input: Partial<Teacher> & { name: string }) {
-  const payload = { ...input, updated_at: new Date().toISOString() }
-  const query = input.id
-    ? db().from('teachers').update(payload).eq('id', input.id)
-    : db().from('teachers').insert(payload)
-  const { data, error } = await query.select().single()
-  if (error) throw error
-  return data as Teacher
+  return callAppsScript<Teacher>('saveTeacher', input)
 }
 
 export async function listMonthEntries(month: string): Promise<WorkEntry[]> {
-  const { data, error } = await db().from('work_entries').select('*').eq('work_month', month)
-  if (error) throw error
-  return (data ?? []) as WorkEntry[]
+  return callAppsScript<WorkEntry[]>('listMonthEntries', { month })
 }
 
 export async function saveWorkEntry(input: Omit<Partial<WorkEntry>, 'total_amount'> & {
@@ -35,23 +23,15 @@ export async function saveWorkEntry(input: Omit<Partial<WorkEntry>, 'total_amoun
   unit_rate_snapshot: number
   total_amount: number
 }) {
-  const query = input.id
-    ? db().from('work_entries').update(input).eq('id', input.id)
-    : db().from('work_entries').insert(input)
-  const { data, error } = await query.select().single()
-  if (error) throw error
-  return data as WorkEntry
+  return callAppsScript<WorkEntry>('saveWorkEntry', { ...input, request_id: requestId() })
 }
 
 export async function deleteWorkEntry(id: string) {
-  const { error } = await db().from('work_entries').delete().eq('id', id)
-  if (error) throw error
+  await callAppsScript('deleteWorkEntry', { id })
 }
 
 export async function listMonthPayments(month: string): Promise<Payment[]> {
-  const { data, error } = await db().from('payments').select('*').eq('payment_month', month)
-  if (error) throw error
-  return (data ?? []) as Payment[]
+  return callAppsScript<Payment[]>('listMonthPayments', { month })
 }
 
 export async function savePayment(input: Partial<Payment> & {
@@ -60,25 +40,14 @@ export async function savePayment(input: Partial<Payment> & {
   amount: number
   paid_at: string
 }) {
-  const query = input.id
-    ? db().from('payments').update(input).eq('id', input.id)
-    : db().from('payments').insert(input)
-  const { data, error } = await query.select().single()
-  if (error) throw error
-  return data as Payment
+  return callAppsScript<Payment>('savePayment', { ...input, request_id: requestId() })
 }
 
 export async function deletePayment(id: string) {
-  const { error } = await db().from('payments').delete().eq('id', id)
-  if (error) throw error
+  await callAppsScript('deletePayment', { id })
 }
 
 export async function sourceReferencesExist(refs: string[]): Promise<Set<string>> {
   if (!refs.length) return new Set()
-  const { data, error } = await db()
-    .from('work_entries')
-    .select('source_reference')
-    .in('source_reference', refs)
-  if (error) throw error
-  return new Set((data ?? []).map((item) => item.source_reference).filter(Boolean))
+  return new Set(await callAppsScript<string[]>('sourceReferencesExist', { refs }))
 }
