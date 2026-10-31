@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Download, Pencil, Plus, Trash2 } from 'lucide-react'
 import { deletePayment, savePayment } from '../lib/api'
 import { derivePaymentStatus, formatTRY, monthLabel } from '../lib/calculations'
@@ -13,6 +13,8 @@ const empty = { id: '', teacherId: '', amount: '', paidAt: today(), note: '' }
 export function PaymentsPage({ month, setMonth, summaries, payments, reload }: { month: string; setMonth: (v: string) => void; summaries: TeacherMonthSummary[]; payments: Payment[]; reload: () => Promise<void> }) {
   const [form, setForm] = useState(empty)
   const [message, setMessage] = useState('')
+  // Ay değişince eski ödeme kaydının yanlış döneme taşınmasını önle.
+  useEffect(() => { setForm({ ...empty, paidAt: today() }); setMessage('') }, [month])
   const selected = summaries.find((x) => x.teacher.id === form.teacherId)
   const overpay = selected && Number(form.amount) > selected.remaining + (form.id ? Number(payments.find((x) => x.id === form.id)?.amount ?? 0) : 0)
   const rows = useMemo(() => summaries.filter((x) => x.entitlement > 0 || x.paid > 0), [summaries])
