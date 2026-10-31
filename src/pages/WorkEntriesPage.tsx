@@ -19,6 +19,9 @@ export function WorkEntriesPage({ month, setMonth, teachers, entries, reload }: 
     if (!form.id && form.type !== 'extra') setForm((old) => ({ ...old, rate: defaultRate == null ? '' : String(defaultRate) }))
   }, [form.teacherId, form.type, form.id, defaultRate])
 
+  // Başka bir ay seçildiğinde açık düzenlemeyi kapat; eski kaydı yeni aya taşımayalım.
+  useEffect(() => { setForm(empty); setMessage('') }, [month])
+
   const teacherEntries = useMemo(() => entries.filter((item) => !form.teacherId || item.teacher_id === form.teacherId), [entries, form.teacherId])
   async function submit(event: React.FormEvent) {
     event.preventDefault(); setMessage('')
