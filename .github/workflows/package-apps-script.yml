@@ -22,7 +22,10 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
-      - run: npm run build:apps-script
+      - name: Birim testleri
+        run: npm test
+      - name: TypeScript derleme ve Apps Script paketleme
+        run: npm run build:apps-script
       - name: Son HTML sürümünü repoya kaydet
         run: |
           git config user.name "github-actions[bot]"
