@@ -1,5 +1,24 @@
 create extension if not exists pgcrypto;
 
+create table if not exists public.app_users (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  active boolean not null default true,
+  created_at timestamptz not null default now()
+);
+
+alter table public.app_users enable row level security;
+
+create or replace function public.is_authorized_user() returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from public.app_users
+    where user_id = auth.uid() and active = true
+  );
+$$;
+
+revoke all on function public.is_authorized_user() from public;
+grant execute on function public.is_authorized_user() to authenticated;
+
 create table if not exists public.teachers (
   id uuid primary key default gen_random_uuid(),
   name text not null check (length(trim(name)) > 1),
@@ -17,7 +36,7 @@ create table if not exists public.teachers (
 create table if not exists public.work_entries (
   id uuid primary key default gen_random_uuid(),
   teacher_id uuid not null references public.teachers(id) on delete restrict,
-  work_month text not null check (work_month ~ '^\\d{4}-(0[1-9]|1[0-2])$'),
+  work_month text not null check (work_month ~ '^[0-9]{4}-(0[1-9]|1[0-2])$'),
   entry_type text not null check (entry_type in ('group','private','extra')),
   description text,
   quantity numeric(12,3) not null check (quantity >= 0),
@@ -34,7 +53,7 @@ create table if not exists public.work_entries (
 create table if not exists public.payments (
   id uuid primary key default gen_random_uuid(),
   teacher_id uuid not null references public.teachers(id) on delete restrict,
-  payment_month text not null check (payment_month ~ '^\\d{4}-(0[1-9]|1[0-2])$'),
+  payment_month text not null check (payment_month ~ '^[0-9]{4}-(0[1-9]|1[0-2])$'),
   amount numeric(12,2) not null check (amount > 0),
   paid_at date not null default current_date,
   note text,
@@ -61,10 +80,10 @@ alter table public.work_entries enable row level security;
 alter table public.payments enable row level security;
 alter table public.audit_log enable row level security;
 
-create policy "authenticated_manage_teachers" on public.teachers for all to authenticated using (true) with check (true);
-create policy "authenticated_manage_work_entries" on public.work_entries for all to authenticated using (true) with check (true);
-create policy "authenticated_manage_payments" on public.payments for all to authenticated using (true) with check (true);
-create policy "authenticated_read_audit" on public.audit_log for select to authenticated using (true);
+create policy "authorized_manage_teachers" on public.teachers for all to authenticated using (public.is_authorized_user()) with check (public.is_authorized_user());
+create policy "authorized_manage_work_entries" on public.work_entries for all to authenticated using (public.is_authorized_user()) with check (public.is_authorized_user());
+create policy "authorized_manage_payments" on public.payments for all to authenticated using (public.is_authorized_user()) with check (public.is_authorized_user());
+create policy "authorized_read_audit" on public.audit_log for select to authenticated using (public.is_authorized_user());
 
 create or replace function public.write_audit_log() returns trigger language plpgsql security definer set search_path = public as $$
 begin

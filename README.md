@@ -6,9 +6,10 @@ AYDA yöneticileri için öğretmen, aylık ders hakedişi ve ödeme yönetim pa
 
 1. Supabase'te yeni bir proje oluşturun.
 2. SQL Editor'da [`supabase/migrations/001_initial.sql`](supabase/migrations/001_initial.sql) dosyasını çalıştırın.
-3. Authentication > Users bölümünden yönetici kullanıcılarını davet edin/oluşturun. Uygulamada herkese açık kayıt ekranı yoktur.
-4. `.env.example` dosyasını `.env.local` olarak kopyalayıp proje URL'sini ve **publishable/anon** anahtarını girin. `service_role` anahtarını asla tarayıcıya veya GitHub'a koymayın.
-5. `npm install && npm run dev` ile yerelde çalıştırın.
+3. Authentication > Users bölümünden yönetici kullanıcılarını davet edin/oluşturun. Uygulamada herkese açık kayıt ekranı yoktur; Supabase'te **Allow new users to sign up** ayarını kapatın.
+4. Oluşturduğunuz kullanıcının UUID'sini SQL Editor'da izin listesine ekleyin: `insert into public.app_users (user_id) values ('KULLANICI_UUID');`
+5. `.env.example` dosyasını `.env.local` olarak kopyalayıp proje URL'sini ve **publishable/anon** anahtarını girin. `service_role` anahtarını asla tarayıcıya veya GitHub'a koymayın.
+6. `npm install && npm run dev` ile yerelde çalıştırın.
 
 ## Vercel
 
@@ -23,4 +24,4 @@ Hocalar > Excel'den Aktar bölümünde dosya yılı zorunlu olarak seçilir. Dos
 
 ## Veri ve güvenlik notu
 
-Tüm uygulama tablolarında RLS açıktır; yalnızca Supabase'te oturum açmış kullanıcılar okuyup yazabilir. İlk sürümde tüm yetkili kullanıcılar aynı kurum verisini görür. Daha ayrıntılı rol ayrımı gerekirse ayrıca admin rolü/allowlist politikası eklenmelidir.
+Tüm uygulama tablolarında RLS açıktır; yalnızca Supabase'te oturum açmış ve `app_users` izin listesinde aktif olan kullanıcılar okuyup yazabilir. İlk sürümde tüm yetkili kullanıcılar aynı kurum verisini görür.
