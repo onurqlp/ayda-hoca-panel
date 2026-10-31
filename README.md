@@ -21,8 +21,11 @@ arayüz güncellemeleri için tekrar HTML kopyalamak gerekmez.
 
 - Aktif / pasif öğretmen, öğretmen düzenleme ve ücret tarifeleri
 - Grup veya özel ders saati girişi, otomatik hesaplanan aylık hakediş
+- **Bir ay sonra ödeme:** Ekim dersleri Kasım ödemesine, Kasım dersleri Aralık ödemesine bağlanır.
 - Ödeme ekleme, kısmi ödeme, ödenen ve kalan tutarlar
 - Öğretmen bazında aylık özet ve toplamlar
+- Panel ve Ödemeler sayfasındaki ay seçimi **ödeme ayıdır**; Ders Girişi'nde **ders ayı** seçilir.
+- Gerçek transfer tarihini girmeden hiçbir ödeme ödenmiş sayılmaz.
 - Geçmiş ayı seçme, kayıt düzenleme, CSV dışa aktarma
 
 ## Önemli

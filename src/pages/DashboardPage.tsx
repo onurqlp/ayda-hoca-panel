@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { ArrowRight, Banknote, BookOpen, CheckCircle2, Clock3, Pencil, Search, Users } from 'lucide-react'
 import { derivePaymentStatus, formatTRY, monthLabel } from '../lib/calculations'
+import { workMonthForPaymentMonth } from '../lib/dates'
 import type { Teacher, TeacherMonthSummary } from '../types'
 import { MonthPicker } from '../components/MonthPicker'
 import { StatusBadge } from '../components/StatusBadge'
@@ -17,6 +18,7 @@ export function DashboardPage({ month, setMonth, summaries, teachers, loading, g
   goTo: (page: 'entries' | 'payments' | 'teachers') => void
   onEditEntry: (entryId: string) => void
 }) {
+  const workMonth = workMonthForPaymentMonth(month)
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState<View>('all')
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -38,14 +40,14 @@ export function DashboardPage({ month, setMonth, summaries, teachers, loading, g
 
   return <div className="space-y-6">
     <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-      <div><p className="text-xs font-bold uppercase tracking-[.15em] text-ayda-600">AYDA • Öğretmen yönetimi</p><h1 className="mt-1 text-2xl font-extrabold text-slate-900 sm:text-3xl">Aylık Özet</h1><p className="mt-1 text-sm text-slate-500">{monthLabel(month)} ders ve ödeme durumu</p></div>
-      <MonthPicker value={month} onChange={setMonth} />
+      <div><p className="text-xs font-bold uppercase tracking-[.15em] text-ayda-600">AYDA • Öğretmen yönetimi</p><h1 className="mt-1 text-2xl font-extrabold text-slate-900 sm:text-3xl">Aylık Ödeme Paneli</h1><p className="mt-1 text-sm text-slate-500"><strong>{monthLabel(month)} ödemeleri</strong> · {monthLabel(workMonth)} ders hakedişleri</p></div>
+      <label className="text-xs font-semibold text-slate-600">Ödeme ayı<MonthPicker value={month} onChange={setMonth} /></label>
     </div>
 
     <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-      <div className="rounded-2xl border border-indigo-100 bg-indigo-50 p-4 sm:p-5"><div className="flex items-center gap-2 text-xs font-semibold text-indigo-700"><BookOpen size={16}/> Toplam hakediş</div><p className="mt-3 break-words text-xl font-extrabold text-indigo-950 sm:text-2xl">{formatTRY(totalDue)}</p><p className="mt-1 text-xs text-indigo-700">Bu ay hesaplanan</p></div>
-      <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4 sm:p-5"><div className="flex items-center gap-2 text-xs font-semibold text-emerald-700"><CheckCircle2 size={16}/> Ödenen</div><p className="mt-3 break-words text-xl font-extrabold text-emerald-950 sm:text-2xl">{formatTRY(totalPaid)}</p><p className="mt-1 text-xs text-emerald-700">Kaydedilmiş ödemeler</p></div>
-      <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4 sm:p-5"><div className="flex items-center gap-2 text-xs font-semibold text-amber-700"><Banknote size={16}/> Kalan</div><p className="mt-3 break-words text-xl font-extrabold text-amber-950 sm:text-2xl">{formatTRY(totalRemaining)}</p><p className="mt-1 text-xs text-amber-700">Henüz ödenmeyen</p></div>
+      <div className="rounded-2xl border border-indigo-100 bg-indigo-50 p-4 sm:p-5"><div className="flex items-center gap-2 text-xs font-semibold text-indigo-700"><BookOpen size={16}/> Toplam hakediş</div><p className="mt-3 break-words text-xl font-extrabold text-indigo-950 sm:text-2xl">{formatTRY(totalDue)}</p><p className="mt-1 text-xs text-indigo-700">Önceki ayın dersleri</p></div>
+      <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4 sm:p-5"><div className="flex items-center gap-2 text-xs font-semibold text-emerald-700"><CheckCircle2 size={16}/> Ödenen</div><p className="mt-3 break-words text-xl font-extrabold text-emerald-950 sm:text-2xl">{formatTRY(totalPaid)}</p><p className="mt-1 text-xs text-emerald-700">Bu ay yapılan ödemeler</p></div>
+      <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4 sm:p-5"><div className="flex items-center gap-2 text-xs font-semibold text-amber-700"><Banknote size={16}/> Kalan</div><p className="mt-3 break-words text-xl font-extrabold text-amber-950 sm:text-2xl">{formatTRY(totalRemaining)}</p><p className="mt-1 text-xs text-amber-700">Ödenmesi gereken</p></div>
       <div className="rounded-2xl border border-sky-100 bg-sky-50 p-4 sm:p-5"><div className="flex items-center gap-2 text-xs font-semibold text-sky-700"><Users size={16}/> Öğretmenler</div><p className="mt-3 text-xl font-extrabold text-sky-950 sm:text-2xl">{activeCount} <span className="text-sm font-medium text-sky-700">aktif</span></p><p className="mt-1 text-xs text-sky-700">{inactiveCount} pasif · {all.length} bu ay kayıtlı</p></div>
     </section>
 
@@ -53,14 +55,14 @@ export function DashboardPage({ month, setMonth, summaries, teachers, loading, g
       <div className="card p-4 sm:p-5">
         <div className="flex items-center justify-between gap-2"><h2 className="font-bold text-slate-900">Ödeme ilerlemesi</h2><span className="text-sm font-bold text-emerald-700">%{paymentPercentage}</span></div>
         <div className="mt-3 h-3 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: paymentPercentage + '%' }} /></div>
-        <p className="mt-2 text-xs text-slate-500">Bu aya girilen hakedişin ne kadarı ödendi</p>
+        <p className="mt-2 text-xs text-slate-500">Önceki ayın hakedişinden ödenen tutarın oranı</p>
       </div>
       <div className="card flex flex-wrap items-center justify-between gap-3 p-4 sm:p-5"><div><p className="flex items-center gap-2 text-sm font-semibold text-slate-700"><Clock3 size={17}/> Girilen ders birimi</p><p className="mt-2 text-2xl font-extrabold text-slate-950">{totalGroup + totalPrivate}</p><p className="text-xs text-slate-500">{totalGroup} grup · {totalPrivate} özel</p></div><button className="btn-primary" onClick={() => goTo('entries')}>Ders saati gir <ArrowRight size={17}/></button></div>
     </section>
 
     <section className="card overflow-hidden">
       <div className="flex flex-col justify-between gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-center sm:p-5">
-        <div><h2 className="text-lg font-bold">Öğretmenlerin aylık durumu</h2><p className="text-xs text-slate-500">Öğretmene dokunarak ders ve ödemelerini görün.</p></div>
+        <div><h2 className="text-lg font-bold">{monthLabel(workMonth)} derslerinin ödeme durumu</h2><p className="text-xs text-slate-500">Öğretmene dokunarak ders ve ödemelerini görün.</p></div>
         <button className="btn-secondary" onClick={() => goTo('payments')}>Ödeme kaydet <ArrowRight size={16}/></button>
       </div>
       <div className="flex flex-col gap-3 p-4 sm:flex-row">
@@ -74,8 +76,8 @@ export function DashboardPage({ month, setMonth, summaries, teachers, loading, g
           <div className="grid gap-3 p-3 lg:hidden">{filtered.map(item => <button key={item.teacher.id} onClick={() => setSelectedId(item.teacher.id)} className="rounded-xl border border-slate-200 bg-white p-4 text-left"><div className="flex items-start justify-between gap-2"><div><p className="font-bold">{item.teacher.name}</p><p className="mt-1 text-xs text-slate-500">Grup {item.groupQuantity} · Özel {item.privateQuantity}{!item.teacher.active ? ' · Pasif' : ''}</p></div><StatusBadge status={derivePaymentStatus(item.entitlement,item.paid,item.requiresReview)}/></div><div className="mt-4 grid grid-cols-3 gap-2 text-xs"><div><p className="text-slate-500">Hakediş</p><p className="mt-1 font-bold">{formatTRY(item.entitlement)}</p></div><div><p className="text-slate-500">Ödenen</p><p className="mt-1 font-bold text-emerald-700">{formatTRY(item.paid)}</p></div><div><p className="text-slate-500">Kalan</p><p className="mt-1 font-bold text-amber-700">{formatTRY(item.remaining)}</p></div></div></button>)}</div>
         </>}
     </section>
-    {selected && <Modal title={selected.teacher.name + ' · ' + monthLabel(month)} onClose={() => setSelectedId(null)}>
-      <p className="mb-3 text-xs text-slate-500">Ders bilgilerini ödeme durumundan bağımsız olarak değiştirebilirsiniz.</p>
+    {selected && <Modal title={selected.teacher.name + ' · ' + monthLabel(workMonth) + ' dersleri'} onClose={() => setSelectedId(null)}>
+      <p className="mb-3 text-xs text-slate-500">Ödeme dönemi: {monthLabel(month)}. Ders bilgilerini ödeme durumundan bağımsız değiştirebilirsiniz.</p>
       <div className="space-y-2">{selected.entries.map(entry => <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-slate-50 p-3 text-sm" key={entry.id}><div className="min-w-0 flex-1"><b>{entry.entry_type === 'group' ? 'Grup dersi' : entry.entry_type === 'private' ? 'Özel ders' : 'Ek iş'}</b><p className="text-slate-500">{entry.quantity} × {formatTRY(entry.unit_rate_snapshot)}{entry.description ? ' · ' + entry.description : ''}</p></div><div className="flex items-center gap-2"><strong>{formatTRY(entry.total_amount)}</strong><button type="button" className="btn-secondary px-3 py-2" onClick={() => { setSelectedId(null); onEditEntry(entry.id) }}><Pencil size={15} /> Düzenle</button></div></div>)}</div>
       <div className="mt-4 space-y-2 border-t pt-4 text-sm"><div className="flex justify-between"><span>Hakediş</span><b>{formatTRY(selected.entitlement)}</b></div><div className="flex justify-between text-emerald-700"><span>Ödenen</span><b>{formatTRY(selected.paid)}</b></div><div className="flex justify-between font-bold text-amber-700"><span>Kalan</span><span>{formatTRY(selected.remaining)}</span></div></div>
       <button className="btn-primary mt-5 w-full" onClick={() => { setSelectedId(null); goTo('payments') }}>Ödemelere git</button>

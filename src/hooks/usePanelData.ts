@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { listMonthEntries, listMonthPayments, listTeachers } from '../lib/api'
+import { workMonthForPaymentMonth } from '../lib/dates'
 import type { Payment, Teacher, TeacherMonthSummary, WorkEntry } from '../types'
 
-export function usePanelData(month: string) {
+export function usePanelData(paymentMonth: string) {
+  const workMonth = workMonthForPaymentMonth(paymentMonth)
   const [teachers, setTeachers] = useState<Teacher[]>([])
   const [entries, setEntries] = useState<WorkEntry[]>([])
   const [payments, setPayments] = useState<Payment[]>([])
@@ -13,13 +15,13 @@ export function usePanelData(month: string) {
     setLoading(true); setError('')
     try {
       const [teacherRows, entryRows, paymentRows] = await Promise.all([
-        listTeachers(), listMonthEntries(month), listMonthPayments(month),
+        listTeachers(), listMonthEntries(workMonth), listMonthPayments(paymentMonth),
       ])
       setTeachers(teacherRows); setEntries(entryRows); setPayments(paymentRows)
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Veriler alınamadı.')
     } finally { setLoading(false) }
-  }, [month])
+  }, [workMonth, paymentMonth])
 
   useEffect(() => { void reload() }, [reload])
 
