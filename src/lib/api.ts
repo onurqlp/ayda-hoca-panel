@@ -1,4 +1,5 @@
 import { callAppsScript } from './appsScript'
+import { mergeMonthRows, monthLookupKeys } from './monthLookup'
 import type { Payment, Teacher, WorkEntry } from '../types'
 
 const requestId = () => crypto.randomUUID()
@@ -11,8 +12,23 @@ export async function saveTeacher(input: Partial<Teacher> & { name: string }) {
   return callAppsScript<Teacher>('saveTeacher', input)
 }
 
+
+async function listByMonth<T extends { id: string }>(
+  action: 'listMonthEntries' | 'listMonthPayments',
+  month: string, field: 'work_month' | 'payment_month',
+): Promise<T[]> {
+  const sets = await Promise.all(
+    monthLookupKeys(month).map(key => callAppsScript<T[]>(action, { month: key })),
+  )
+  return mergeMonthRows(sets, month, field)
+}
+
 export async function listMonthEntries(month: string): Promise<WorkEntry[]> {
-  return callAppsScript<WorkEntry[]>('listMonthEntries', { month })
+  return listByMonth<WorkEntry>('listMonthEntries', month, 'work_month')
+}
+
+export async function listMonthPayments(month: string): Promise<Payment[]> {
+  return listByMonth<Payment>('listMonthPayments', month, 'payment_month')
 }
 
 export async function saveWorkEntry(input: Omit<Partial<WorkEntry>, 'total_amount'> & {
@@ -30,9 +46,6 @@ export async function deleteWorkEntry(id: string) {
   await callAppsScript('deleteWorkEntry', { id })
 }
 
-export async function listMonthPayments(month: string): Promise<Payment[]> {
-  return callAppsScript<Payment[]>('listMonthPayments', { month })
-}
 
 export async function savePayment(input: Partial<Payment> & {
   teacher_id: string

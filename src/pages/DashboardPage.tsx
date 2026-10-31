@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { ArrowRight, Banknote, BookOpen, CheckCircle2, Clock3, Pencil, Search, Users } from 'lucide-react'
 import { derivePaymentStatus, formatTRY, monthLabel } from '../lib/calculations'
 import { workMonthForPaymentMonth } from '../lib/dates'
+import { isRemovedTeacher } from '../lib/teacherVisibility'
 import type { Teacher, TeacherMonthSummary } from '../types'
 import { MonthPicker } from '../components/MonthPicker'
 import { StatusBadge } from '../components/StatusBadge'
@@ -23,8 +24,9 @@ export function DashboardPage({ month, setMonth, summaries, teachers, loading, g
   const [status, setStatus] = useState<View>('all')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const selected = summaries.find(item => item.teacher.id === selectedId)
-  const activeCount = teachers.filter(t => t.active).length
-  const inactiveCount = teachers.length - activeCount
+  const currentTeachers = teachers.filter(t => !isRemovedTeacher(t))
+  const activeCount = currentTeachers.filter(t => t.active).length
+  const inactiveCount = currentTeachers.length - activeCount
   const all = useMemo(() => [...summaries].sort((a, b) => a.teacher.name.localeCompare(b.teacher.name, 'tr')), [summaries])
   const filtered = useMemo(() => all.filter(item => {
     const match = item.teacher.name.toLocaleLowerCase('tr-TR').includes(search.toLocaleLowerCase('tr-TR'))

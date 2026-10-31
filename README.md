@@ -20,11 +20,14 @@ arayüz güncellemeleri için tekrar HTML kopyalamak gerekmez.
 ## Özellikler
 
 - Aktif / pasif öğretmen, öğretmen düzenleme ve ücret tarifeleri
+- Hoca silme ve geri getirme; geçmiş hakediş/ödemeler korunur.
+- Verileri Yenile düğmesi ve son başarılı Google Sheets okuma saati.
 - Grup veya özel ders saati girişi, otomatik hesaplanan aylık hakediş
 - **Bir ay sonra ödeme:** Ekim dersleri Kasım ödemesine, Kasım dersleri Aralık ödemesine bağlanır.
 - Ödeme ekleme, kısmi ödeme, ödenen ve kalan tutarlar
 - Öğretmen bazında aylık özet ve toplamlar
 - Panel ve Ödemeler sayfasındaki ay seçimi **ödeme ayıdır**; Ders Girişi'nde **ders ayı** seçilir.
+- Sayısal/tarihe dönüşmüş ay değerleri panel tarafından alternatif biçimleriyle okunur.
 - Gerçek transfer tarihini girmeden hiçbir ödeme ödenmiş sayılmaz.
 - Geçmiş ayı seçme, kayıt düzenleme, CSV dışa aktarma
 
