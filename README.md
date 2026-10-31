@@ -43,6 +43,6 @@ Google Sheets'te `YYYY-AA` biçiminde metin tutulmalıdır. Hatalı dönüştür
 - [Ekim_Arsiv sekmesi - Google Sheets](https://docs.google.com/spreadsheets/d/1pgSX6ffuXmBn9mmMjXEcPa1n_O3Vt6XWOJrm99QDRKI/edit) kaynak dosyadaki 15 öğretmen satırını içerir.
 - Ekim kaynak dosyasının yılı kendi içinde belirtilmiyordu; kullanıcının talimatıyla Ekim **2026** olarak canlı panelde işlendi.
 - Kaynak toplam: **37.700 TL ders + 1.050 TL video + 200 TL prim = 38.950 TL**.
-- Önceki 4 deneme kaydı (**24.450 TL**) iptal durumuna alındı; bu kayıtlar toplamlara dahil değil. Canlı panelde kaynak dosyadan gelen **5 aktif satır, toplam 38.950 TL** bulunuyor.
+- Önceki 4 deneme kaydı (**24.450 TL**) iptal durumuna alındı. Sonradan yeni ders kayıtları ve düzenlemeler yapıldığından **güncel hakediş toplamı sabit değildir**; gerçek güncel tutar panelin son başarılı Google Sheets yenilemesinde görülür.
 - Kaynaktaki ödeme işareti `1` gerçek ödeme olarak aktarılmaz.
 - Excel kaynak dosyaları, telefon ve banka verileri GitHub'da tutulmaz.
