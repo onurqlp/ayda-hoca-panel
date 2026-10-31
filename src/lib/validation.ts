@@ -4,10 +4,10 @@ const turkishMap: Record<string, string> = {
 
 export function normalizeName(value: string): string {
   return value
+    .toLocaleLowerCase('tr-TR')
     .replace(/[çğıİöşü]/g, (letter) => turkishMap[letter] ?? letter)
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
-    .toLocaleLowerCase('tr-TR')
     .replace(/[^a-z0-9]/g, '')
 }
 
