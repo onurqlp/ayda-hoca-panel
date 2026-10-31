@@ -10,6 +10,9 @@ on:
       - 'vite.config.ts'
       - '.github/workflows/package-apps-script.yml'
   workflow_dispatch:
+concurrency:
+  group: ayda-apps-script-package-main
+  cancel-in-progress: true
 permissions:
   contents: write
 jobs:
@@ -33,5 +36,6 @@ jobs:
           git add apps-script/Index.html
           if ! git diff --cached --quiet; then
             git commit -m "build: Apps Script HTML yenilendi [skip ci]"
+            git pull --rebase origin main
             git push
           fi
