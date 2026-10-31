@@ -184,6 +184,17 @@ export function normalizeSheetRows(
   return entries
 }
 
+export function importSourceReferences(row: Pick<ImportEntry, 'sourceReference' | 'sheet' | 'row' | 'workMonth'>): string[] {
+  const references = [row.sourceReference]
+  // Ekim 2026 tablosu daha önce doğrudan Google Sheets'e eklenmişti.
+  // Aynı kaynak HOCA.xlsx üzerinden tekrar yüklenirse ikinci kez hakediş oluşmasın.
+  if (row.workMonth === '2026-10' && row.sheet.toLocaleLowerCase('tr-TR').trim() === 'ekim') {
+    const suffix = row.sourceReference.slice(row.sourceReference.lastIndexOf(':') + 1)
+    references.push(`HOCA.xlsx:Ekim:${row.row}:${suffix}`)
+  }
+  return references
+}
+
 export async function parseExcel(file: File, year: number): Promise<ExcelPreview> {
   if (!Number.isInteger(year) || year < 2000 || year > 2100) throw new Error('Önce doğru yılı seçin.')
   const buffer = await file.arrayBuffer()
