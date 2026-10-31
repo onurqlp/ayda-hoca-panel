@@ -28,6 +28,8 @@ jobs:
       - name: Birim testleri
         run: npm test
       - name: TypeScript derleme ve Apps Script paketleme
+        env:
+          VITE_APP_REVISION: ${{ github.sha }}
         run: npm run build:apps-script
       - name: Son HTML sürümünü repoya kaydet
         run: |
