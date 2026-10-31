@@ -30,3 +30,12 @@ arayüz güncellemeleri için tekrar HTML kopyalamak gerekmez.
 `HOCA.xlsx` içindeki kişisel bilgiler **GitHub'a yüklenmez**. Ders ayları
 Google Sheets'te `YYYY-AA` biçiminde metin tutulmalıdır. Hatalı dönüştürülmüş
 2026-10 ay kayıtları 31.10.2026 tarihinde düzeltildi.
+
+## Ekim arşivi
+
+- [Ekim_Arsiv sekmesi - Google Sheets](https://docs.google.com/spreadsheets/d/1pgSX6ffuXmBn9mmMjXEcPa1n_O3Vt6XWOJrm99QDRKI/edit) kaynak dosyadaki 15 öğretmen satırını içerir.
+- Kaynak Ekim ayının yılı dosyada yazmadığından arşiv tarihi **doğrulanmadı** olarak tutulur.
+- Kaynak toplam: **37.700 TL ders + 1.050 TL video + 200 TL prim = 38.950 TL**.
+- Panelde kullanıcı tarafından girilmiş 2026-10 tarihli 4 ders kaydı (**24.450 TL**) farklı bir veri kümesidir. Çifte sayımı önlemek için arşiv toplamı canlı hakedişe eklenmez.
+- Kaynaktaki ödeme işareti `1` gerçek ödeme olarak aktarılmaz.
+- Excel kaynak dosyaları, telefon ve banka verileri GitHub'da tutulmaz.
