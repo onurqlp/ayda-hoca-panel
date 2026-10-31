@@ -85,11 +85,11 @@ function rows_(name) {
   if (sheet.getLastRow() < 2) return [];
   const values = sheet.getRange(1, 1, sheet.getLastRow(), sheet.getLastColumn()).getValues();
   const headers = values.shift();
-  return values.filter(function (row) { return row.some(function (value) { return value !== ''; }); }).map(function (row, offset) {
+  return values.map(function (row, offset) {
     const item = { _row: offset + 2 };
     headers.forEach(function (header, index) { item[header] = serializable_(row[index]); });
     return item;
-  });
+  }).filter(function (item) { return headers.some(function (header) { return item[header] !== ''; }); });
 }
 
 function serializable_(value) {
@@ -139,8 +139,8 @@ function saveTeacher_(payload, user) {
     const timestamp = now_();
     const row = {
       id: payload.id || Utilities.getUuid(), ad_soyad: String(payload.name).trim(), telefon: payload.phone || '',
-      iban: payload.iban || '', hesap_sahibi: payload.account_holder || '', grup_birim_ucreti: payload.group_rate === null ? '' : Number(payload.group_rate || 0),
-      ozel_birim_ucreti: payload.private_rate === null ? '' : Number(payload.private_rate || 0), notlar: payload.notes || '',
+      iban: payload.iban || '', hesap_sahibi: payload.account_holder || '', grup_birim_ucreti: payload.group_rate === null || payload.group_rate === undefined || payload.group_rate === '' ? '' : Number(payload.group_rate),
+      ozel_birim_ucreti: payload.private_rate === null || payload.private_rate === undefined || payload.private_rate === '' ? '' : Number(payload.private_rate), notlar: payload.notes || '',
       aktif: payload.active !== false, created_at: old ? old.created_at : timestamp, updated_at: timestamp,
     };
     appendOrUpdate_(SHEETS.teachers, row, payload.id);
@@ -174,11 +174,19 @@ function saveWorkEntry_(payload, user) {
       if (sourceDuplicate) return entryOut_(sourceDuplicate);
     }
     const old = payload.id ? all.find(function (row) { return row.id === payload.id; }) : null;
+    if (payload.id && !old) throw new Error('Düzenlenecek ders kaydı bulunamadı.');
+    const quantity = Number(payload.quantity);
+    const rate = Number(payload.unit_rate_snapshot);
+    if (!/^\d{4}-\d{2}$/.test(String(payload.work_month || ''))) throw new Error('Ay YYYY-AA biçiminde olmalı.');
+    if (['group', 'private', 'extra'].indexOf(payload.entry_type) === -1) throw new Error('Geçersiz ders türü.');
+    if (!rows_(SHEETS.teachers).some(function (teacher) { return teacher.id === payload.teacher_id; })) throw new Error('Öğretmen bulunamadı.');
+    if (!isFinite(quantity) || quantity < 0 || !isFinite(rate) || rate < 0) throw new Error('Ders miktarı veya birim ücreti hatalı.');
+    if (payload.source_type !== 'excel' && (quantity <= 0 || rate <= 0)) throw new Error('Ders miktarı ve birim ücreti sıfırdan büyük olmalı.');
     const timestamp = now_();
     const row = {
       id: payload.id || Utilities.getUuid(), teacher_id: payload.teacher_id, work_month: payload.work_month,
-      entry_type: payload.entry_type, description: payload.description || '', quantity: Number(payload.quantity),
-      unit_rate_snapshot: Number(payload.unit_rate_snapshot), total_amount: Number(payload.total_amount),
+      entry_type: payload.entry_type, description: payload.description || '', quantity: quantity,
+      unit_rate_snapshot: rate, total_amount: Math.round(quantity * rate * 100) / 100,
       rate_override_reason: payload.rate_override_reason || '', source_type: payload.source_type || 'manual',
       source_reference: payload.source_reference || '', requires_review: Boolean(payload.requires_review),
       created_at: old ? old.created_at : timestamp, updated_at: timestamp, durum: 'active', request_id: payload.request_id || '',
@@ -203,10 +211,15 @@ function savePayment_(payload, user) {
     const duplicate = payload.request_id && all.find(function (row) { return row.request_id === payload.request_id; });
     if (duplicate) return paymentOut_(duplicate);
     const old = payload.id ? all.find(function (row) { return row.id === payload.id; }) : null;
+    if (payload.id && !old) throw new Error('Düzenlenecek ödeme bulunamadı.');
+    const amount = Number(payload.amount);
+    if (!isFinite(amount) || amount <= 0) throw new Error('Ödeme tutarı sıfırdan büyük olmalı.');
+    if (!/^\d{4}-\d{2}$/.test(String(payload.payment_month || ''))) throw new Error('Ödeme dönemi hatalı.');
+    if (!rows_(SHEETS.teachers).some(function (teacher) { return teacher.id === payload.teacher_id; })) throw new Error('Öğretmen bulunamadı.');
     const timestamp = now_();
     const row = {
       id: payload.id || Utilities.getUuid(), teacher_id: payload.teacher_id, payment_month: payload.payment_month,
-      amount: Number(payload.amount), paid_at: payload.paid_at, note: payload.note || '',
+      amount: Math.round(amount * 100) / 100, paid_at: payload.paid_at, note: payload.note || '',
       created_at: old ? old.created_at : timestamp, updated_at: timestamp, durum: 'active', request_id: payload.request_id || '',
     };
     appendOrUpdate_(SHEETS.payments, row, payload.id);
