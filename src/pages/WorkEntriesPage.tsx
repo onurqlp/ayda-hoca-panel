@@ -4,6 +4,7 @@ import { calculateAmount, formatTRY, monthLabel } from '../lib/calculations'
 import { paymentMonthForWorkMonth } from '../lib/dates'
 import { deleteWorkEntry, listMonthEntries, saveWorkEntry } from '../lib/api'
 import { isRemovedTeacher } from '../lib/teacherVisibility'
+import { validateEntryNumbers } from '../lib/entryValidation'
 import type { EntryType, Teacher, WorkEntry } from '../types'
 import { MonthPicker } from '../components/MonthPicker'
 
@@ -53,13 +54,14 @@ export function WorkEntriesPage({ month, setMonth, teachers, entries, reload, ed
   async function submit(event: React.FormEvent) {
     event.preventDefault(); setMessage('')
     if (!form.teacherId) return setMessage('Öğretmen seçin.')
-    if (!form.rate || Number(form.rate) <= 0 || !Number.isFinite(Number(form.rate))) return setMessage('Birim ücret belirlenmeden kayıt yapılamaz.')
+    const existing = form.id ? entries.find(item => item.id === form.id) : undefined
+    const invalid = validateEntryNumbers(form.quantity, form.rate, existing?.source_type === 'excel')
+    if (invalid) return setMessage(invalid)
     setBusy(true)
     let savedId: string | null = null
     try {
       // Excel'den gelen kayıt düzenlenirken kaynak referansı korunur.
       // Böylece aynı Excel tekrar aktarılırsa ikinci bir hakediş oluşmaz.
-      const existing = form.id ? entries.find((item) => item.id === form.id) : undefined
       const saved = await saveWorkEntry({
         id: form.id || undefined, teacher_id: form.teacherId, work_month: month,
         entry_type: form.type, quantity: Number(form.quantity),
@@ -89,13 +91,17 @@ export function WorkEntriesPage({ month, setMonth, teachers, entries, reload, ed
     if (removingId || !confirm('Bu ders kaydı silinsin mi? İşlem denetim kaydına işlenecek.')) return
     setRemovingId(id)
     setMessage('')
+    let deleted = false
     try {
       await deleteWorkEntry(id)
+      deleted = true
       await reload()
       if (form.id === id) setForm(empty)
       setMessage('Ders kaydı iptal edildi. Hakediş yeniden hesaplandı.')
     } catch (error) {
-      setMessage(error instanceof Error ? 'Ders silinemedi: ' + error.message : 'Ders kaydı silinemedi.')
+      setMessage(deleted
+        ? 'Ders kaydı iptal edildi ancak veriler yenilenemedi. Verileri Yenile ile kontrol edin.'
+        : error instanceof Error ? 'Ders silinemedi: ' + error.message : 'Ders kaydı silinemedi.')
     } finally { setRemovingId(null) }
   }
 

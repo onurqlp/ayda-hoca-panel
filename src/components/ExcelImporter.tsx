@@ -22,11 +22,12 @@ export function ExcelImporter({ teachers, onDone }: { teachers: Teacher[]; onDon
   async function importApproved() {
     if (!preview) return
     setBusy(true); setMessage('')
+    let createdTeachers = 0
+    let createdEntries = 0
     try {
       const existingRefs = await sourceReferencesExist(preview.entries.flatMap(importSourceReferences))
       const canonical = (value: string) => normalizeName(value).replace(/hoca$/, '')
       const teacherMap = new Map(teachers.map((teacher) => [canonical(teacher.name), teacher]))
-      let createdTeachers = 0; let createdEntries = 0
       // Ana öğretmen listesindeki bilgiler önceliklidir; mevcut hocaların fiyatları
       // otomatik güncellenmez (geçmişte kullanılan birim ücretler farklı olabilir).
       for (const source of preview.teacherRows) {
@@ -52,8 +53,15 @@ export function ExcelImporter({ teachers, onDone }: { teachers: Teacher[]; onDon
         await saveWorkEntry({ teacher_id: teacher.id, work_month: row.workMonth, entry_type: row.entryType, description: row.description || null, quantity: row.quantity, unit_rate_snapshot: row.unitRate, total_amount: row.totalAmount, source_type: 'excel', source_reference: row.sourceReference, requires_review: row.requiresReview, rate_override_reason: null })
         createdEntries++
       }
-      setMessage(`${createdTeachers} yeni hoca, ${createdEntries} yeni satır aktarıldı. Tekrar eden satırlar atlandı.`); await onDone()
-    } catch (e) { setMessage(e instanceof Error ? e.message : 'Aktarım tamamlanamadı.') } finally { setBusy(false) }
+      await onDone()
+      setMessage(`${createdTeachers} yeni hoca, ${createdEntries} yeni satır aktarıldı. Tekrar eden satırlar atlandı.`)
+    } catch (e) {
+      // Earlier requests may have been written before a later request failed.
+      // Reloading and reporting partial progress prevents accidental re-imports.
+      try { await onDone() } catch { /* The refresh button can retry a failed reload. */ }
+      const detail = e instanceof Error ? e.message : 'Bilinmeyen aktarım hatası'
+      setMessage(`Aktarım kesildi. ${createdTeachers} hoca, ${createdEntries} ders satırı kaydedilmiş olabilir. ${detail}. Verileri Yenile ile kontrol edin.`)
+    } finally { setBusy(false) }
   }
 
   return <div><div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5"><div className="flex items-center gap-3"><FileSpreadsheet className="text-emerald-700" /><div><p className="font-semibold">HOCA.xlsx</p><p className="text-xs text-slate-500">Dosya tarayıcıda okunur; GitHub'a yüklenmez.</p></div></div><label className="mt-4 block"><span className="label">Sekmelerin yılı *</span><input className="field" type="number" min="2000" max="2100" value={year} placeholder="Örn. 2025" onChange={(e) => { setYear(e.target.value); setPreview(null) }} /></label><label className="btn-primary mt-4 cursor-pointer"><Upload size={17} />{busy ? 'Okunuyor…' : 'Dosya Seç'}<input type="file" accept=".xlsx,.xls" className="hidden" disabled={busy} onClick={(e) => { e.currentTarget.value = '' }} onChange={(e) => void choose(e.target.files?.[0])} /></label></div>

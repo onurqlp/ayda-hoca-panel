@@ -45,6 +45,7 @@ export function TeachersPage({ teachers, summaries, reload }: { teachers: Teache
     const iban = validateTurkishIban(form.iban)
     if (!iban.valid) return setMessage('IBAN geçerli bir TR IBAN biçiminde değil.')
     setBusy(true)
+    let saved = false
     try {
       await saveTeacher({
         id: form.id || undefined, name: form.name.trim(),
@@ -54,30 +55,43 @@ export function TeachersPage({ teachers, summaries, reload }: { teachers: Teache
         private_rate: form.private_rate === '' ? null : Number(form.private_rate),
         notes: form.notes || null, active: form.active,
       })
+      saved = true
       await reload()
       setOpen(false); setForm(blank)
       setMessage('Hoca bilgileri Google Sheets\'e kaydedildi.')
-    } catch (e) { setMessage(e instanceof Error ? e.message : 'Kaydedilemedi.') }
+    } catch (e) {
+      setMessage(saved
+        ? 'Hoca bilgileri kaydedildi ancak liste yenilenemedi. Verileri Yenile ile kontrol edin.'
+        : e instanceof Error ? e.message : 'Kaydedilemedi.')
+    }
     finally { setBusy(false) }
   }
   async function remove(teacher: Teacher) {
     if (!confirm(teacher.name + ' listeden silinsin mi? Eski ders ve ödeme kayıtları korunur; Silinenler bölümünden geri getirebilirsiniz.')) return
     setBusy(true); setMessage('')
+    let saved = false
     try {
       await saveTeacher({ ...teacherPayload(teacher), active: false, notes: removedNotes(teacher.notes) })
+      saved = true
       await reload()
       setMessage(teacher.name + ' silindi. Geçmiş kayıtları korunuyor.')
-    } catch (e) { setMessage(e instanceof Error ? e.message : 'Hoca silinemedi.') }
+    } catch (e) { setMessage(saved
+      ? teacher.name + ' listeden kaldırıldı ama yenileme başarısız; Verileri Yenile ile kontrol edin.'
+      : e instanceof Error ? e.message : 'Hoca silinemedi.') }
     finally { setBusy(false) }
   }
 
   async function restore(teacher: Teacher) {
     setBusy(true); setMessage('')
+    let saved = false
     try {
       await saveTeacher({ ...teacherPayload(teacher), active: false, notes: visibleNotes(teacher.notes) })
+      saved = true
       await reload()
       setMessage(teacher.name + ' geri getirildi. Pasif hocalar bölümünden tekrar aktif yapılabilir.')
-    } catch (e) { setMessage(e instanceof Error ? e.message : 'Geri getirme başarısız.') }
+    } catch (e) { setMessage(saved
+      ? teacher.name + ' geri getirildi ama liste yenilenemedi; Verileri Yenile ile kontrol edin.'
+      : e instanceof Error ? e.message : 'Geri getirme başarısız.') }
     finally { setBusy(false) }
   }
 
